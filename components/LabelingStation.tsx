@@ -5,7 +5,7 @@ import { Play, Square, Printer, History, ArrowUp, ArrowDown, Usb, Package } from
 import { useLanguage } from '../contexts/LanguageContext';
 import { SerialScaleService } from '../services/serialService';
 import { storageService } from '../services/storageService';
-import { printingService } from '../services/printingService'; // UPDATED IMPORT
+import { printingService } from '../services/printingService';
 
 interface LabelingStationProps {
   activeOrder: PackingOrder;
@@ -26,11 +26,11 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
   const [hardware, setHardware] = useState<HardwareConfig>(() => {
     const saved = storageService.getHardwareConfig();
     return {
-        ...saved,
-        printerBrand: saved.printerBrand || 'Generic_PDF',
-        connectionType: saved.connectionType || 'System_Driver',
-        labelWidth: saved.labelWidth || 100,
-        labelHeight: saved.labelHeight || 150
+      ...saved,
+      printerBrand: saved.printerBrand || 'Generic_PDF',
+      connectionType: saved.connectionType || 'System_Driver',
+      labelWidth: saved.labelWidth || 100,
+      labelHeight: saved.labelHeight || 150
     };
   });
 
@@ -46,9 +46,9 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
     // Refresh hardware config in case user changed it in another tab
     const saved = storageService.getHardwareConfig();
     setHardware({
-        ...saved,
-        printerBrand: saved.printerBrand || 'Generic_PDF',
-        connectionType: saved.connectionType || 'System_Driver'
+      ...saved,
+      printerBrand: saved.printerBrand || 'Generic_PDF',
+      connectionType: saved.connectionType || 'System_Driver'
     });
     
     return () => {
@@ -56,6 +56,7 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
     };
   }, []);
 
+  // Simulação de peso (se não estiver ligado)
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (autoSimulate && isRunning && !isConnected) {
@@ -70,24 +71,6 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
     }
     return () => clearInterval(interval);
   }, [autoSimulate, isRunning, activeOrder.targetWeight, isConnected]);
-
-  const handleConnectSerial = async () => {
-     serialService.setBrand(hardware.scaleBrand);
-     
-     const connected = await serialService.connect();
-     if (connected) {
-       setIsConnected(true);
-       setIsRunning(true);
-       setAutoSimulate(false);
-       
-       serialService.startReading((data) => {
-          setWeight(data.weight);
-          setIsStable(data.isStable);
-       });
-     } else {
-       alert("Não foi possível conectar à balança. Verifique se está a usar Chrome/Edge.");
-     }
-  };
 
   const handlePrint = async () => {
     if (!isRunning) return;
@@ -111,7 +94,7 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
     
     // 4. EXECUTE PRINT (Hybrid Logic)
     if (product) {
-        await printingService.printLabel(hardware, activeOrder, product, newLog);
+      await printingService.printLabel(hardware, activeOrder, product, newLog);
     }
     
     // 5. Reset Scale
@@ -121,15 +104,60 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
     // 6. Check Pallet Completion
     const isPalletComplete = updatedLogs.length % itemsPerPallet === 0;
     if (isPalletComplete) {
-        // Optional: Trigger a pallet label here if needed
-        alert(t('Palete Completa!')); 
+      // Optional: Trigger a pallet label here if needed
+      alert(t('Palete Completa!')); 
+    }
+  };
+
+  // NOVO: Monitora o peso e estabilidade para acionar a impressão automática
+  useEffect(() => {
+    // Requisitos para Impressão Automática:
+    // 1. O sistema tem de estar a correr (isRunning)
+    // 2. O peso tem de ser estável (isStable)
+    // 3. O peso tem de ser maior que o peso objetivo (activeOrder.targetWeight)
+    // 4. O peso tem de ser maior que zero
+    if (isRunning && isStable && activeOrder.targetWeight > 0 && weight > 0) {
+      
+      const tolerance = activeOrder.tolerance || 0.05; // Usar tolerância da ordem ou 50g
+      const target = activeOrder.targetWeight;
+      
+      // Verifica se o peso está DENTRO da margem de tolerância
+      if (weight >= (target - tolerance) && weight <= (target + tolerance)) {
+        
+        // Verifica se este peso ainda não foi registado (para evitar loops infinitos de impressão)
+        const isWeightLogged = logs.some(log => log.weight === weight && (new Date().getTime() - new Date(log.timestamp).getTime() < 1000));
+        
+        if (!isWeightLogged) {
+          console.log("Peso atingido e estável. A imprimir automaticamente...");
+          handlePrint();
+        }
+      }
+    }
+  }, [weight, isStable, isRunning, activeOrder.targetWeight, activeOrder.tolerance, logs]); // Dependências do useEffect
+
+
+  const handleConnectSerial = async () => {
+    serialService.setBrand(hardware.scaleBrand);
+    
+    const connected = await serialService.connect();
+    if (connected) {
+      setIsConnected(true);
+      setIsRunning(true);
+      setAutoSimulate(false);
+      
+      serialService.startReading((data) => {
+        setWeight(data.weight);
+        setIsStable(data.isStable);
+      });
+    } else {
+      alert("Não foi possível conectar à balança. Verifique se está a usar Chrome/Edge.");
     }
   };
 
   const handleSimulateWeight = () => {
-     const base = activeOrder.targetWeight > 0 ? activeOrder.targetWeight : 1.250;
-     setWeight(base);
-     setIsStable(true);
+    const base = activeOrder.targetWeight > 0 ? activeOrder.targetWeight : 1.250;
+    setWeight(base);
+    setIsStable(true);
   }
 
   return (
@@ -159,28 +187,28 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
         <div className="lg:col-span-4 flex flex-col gap-4">
           <Card title={t('labeling.stats')} className="flex-none">
              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-500 uppercase font-bold">{t('labeling.labels')}</div>
-                  <div className="text-2xl font-mono font-bold text-accent">{count}</div>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-500 uppercase font-bold">{t('labeling.totalKg')}</div>
-                  <div className="text-2xl font-mono font-bold text-slate-800">{totalWeight.toFixed(3)}</div>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-500 uppercase font-bold">{t('labeling.target')}</div>
-                  <div className="text-2xl font-mono font-bold text-slate-400">{activeOrder.targetWeight || '-'}</div>
-                </div>
+               <div className="p-3 bg-slate-50 rounded-lg">
+                 <div className="text-xs text-slate-500 uppercase font-bold">{t('labeling.labels')}</div>
+                 <div className="text-2xl font-mono font-bold text-accent">{count}</div>
+               </div>
+               <div className="p-3 bg-slate-50 rounded-lg">
+                 <div className="text-xs text-slate-500 uppercase font-bold">{t('labeling.totalKg')}</div>
+                 <div className="text-2xl font-mono font-bold text-slate-800">{totalWeight.toFixed(3)}</div>
+               </div>
+               <div className="p-3 bg-slate-50 rounded-lg">
+                 <div className="text-xs text-slate-500 uppercase font-bold">{t('labeling.target')}</div>
+                 <div className="text-2xl font-mono font-bold text-slate-400">{activeOrder.targetWeight || '-'}</div>
+               </div>
              </div>
              {/* Pallet Progress */}
              <div className="mt-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold text-indigo-800 flex items-center gap-1"><Package className="w-3 h-3"/> PALETE</span>
-                    <span className="text-xs font-mono text-indigo-600">{displayBoxCount} / {itemsPerPallet}</span>
-                </div>
-                <div className="w-full bg-indigo-200 rounded-full h-2.5">
-                    <div className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${(displayBoxCount / itemsPerPallet) * 100}%` }}></div>
-                </div>
+               <div className="flex justify-between items-center mb-2">
+                   <span className="text-xs font-bold text-indigo-800 flex items-center gap-1"><Package className="w-3 h-3"/> PALETE</span>
+                   <span className="text-xs font-mono text-indigo-600">{displayBoxCount} / {itemsPerPallet}</span>
+               </div>
+               <div className="w-full bg-indigo-200 rounded-full h-2.5">
+                   <div className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${(displayBoxCount / itemsPerPallet) * 100}%` }}></div>
+               </div>
              </div>
           </Card>
 
@@ -254,8 +282,8 @@ export const LabelingStation: React.FC<LabelingStationProps> = ({ activeOrder, o
              >
                <Printer className="w-8 h-8" />
                {hardware.printerBrand === 'Zebra' && hardware.connectionType === 'USB_Serial' 
-                 ? 'Imprimir ZPL (USB)' 
-                 : `Imprimir (${hardware.printerBrand})`}
+                ? 'Imprimir ZPL (USB)' 
+                : `Imprimir (${hardware.printerBrand})`}
              </button>
           </div>
 
