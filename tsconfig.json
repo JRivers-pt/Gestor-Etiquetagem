@@ -1,24 +1,35 @@
 {
   "compilerOptions": {
-    // ... (o resto das suas configurações) ...
-    "target": "ES2020",
+    // Configurações de Target e Bibliotecas (CORRIGIDAS para evitar o erro TS6046)
+    "target": "es2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOMIterable"],
-    "module": "ESNext",
+    "lib": ["es2020", "dom", "dom.iterable"], 
+    "module": "esnext",
+    
+    // Otimizações e Verificações
     "skipLibCheck": true,
     
-    /* Outras configurações que já existam... */
-    
-    // Configurações de React/JSX
+    // Configurações de React/JSX (mantidas como padrão Vite)
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    
+    // Segurança e Rigor
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
   
-  // Adicione a secção 'exclude' ou atualize se já existir
+  // Ficheiros a incluir na compilação
   "include": ["src", "types.ts"],
-  "exclude": ["vite.config.ts", "vite.config.node.ts", "dev-dist"]
+  
+  // Ficheiros a excluir (CORRIGIDO: Resolve o erro TS6305)
+  "exclude": ["vite.config.ts", "vite.config.node.ts", "dev-dist"],
+  
+  // Referências adicionais (pode remover se não estiver a usar ficheiros Node)
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

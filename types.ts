@@ -47,6 +47,9 @@ export interface LabelTemplate {
 }
 
 // Hardware Types
+// CORREÇÃO: Definição do tipo ausente ScaleBrand
+export type ScaleBrand = 'Mettler Toledo' | 'Bizerba' | 'Rice Lake' | 'Dibal' | 'Generic_Serial';
+
 export type PrinterBrand = 'Zebra' | 'Epson' | 'Brother' | 'Dymo' | 'Generic_PDF';
 export type ConnectionType = 'USB_Serial' | 'System_Driver';
 
