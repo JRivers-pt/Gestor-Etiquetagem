@@ -1,49 +1,53 @@
+// types.ts (VERSÃO CORRIGIDA)
+
 export enum PackingStatus {
-  OPEN = 'Open',
-  CLOSED = 'Closed',
-  IN_PROGRESS = 'In Progress'
+  OPEN = 'Open',
+  CLOSED = 'Closed',
+  IN_PROGRESS = 'In Progress'
 }
 
 export interface Product {
-  id: number;
-  code: string;
-  description: string;
-  variety: string;
-  externalCode: string;
-  origin: string;
-  unitPrice?: number;
+  id: number;
+  code: string;
+  description: string;
+  variety: string;
+  externalCode: string;
+  origin: string;
+  unitPrice?: number;
+  companyId: string; // <--- ADICIONADO PARA RLS
 }
 
 export interface PackingOrder {
-  id: number;
-  orderNumber: string;
-  date: string;
-  status: PackingStatus;
-  customerDoc: string;
-  productId: number;
-  targetWeight: number;
-  tolerance: number;
-  batchNumber: string;
-  expiryDate: string;
-  boxLabelType: string;
-  palletLabelType: string;
-  itemsPerPallet?: number;
-  // Computed/Runtime stats
-  currentTotalWeight: number;
-  boxesCount: number;
+  id: number;
+  orderNumber: string;
+  date: string;
+  status: PackingStatus;
+  customerDoc: string;
+  productId: number;
+  targetWeight: number;
+  tolerance: number;
+  batchNumber: string;
+  expiryDate: string;
+  boxLabelType: string;
+  palletLabelType: string;
+  itemsPerPallet?: number;
+  // Computed/Runtime stats
+  currentTotalWeight: number;
+  boxesCount: number;
+  companyId: string; // <--- ADICIONADO PARA RLS
 }
 
 export interface WeighingLog {
-  id: string;
-  orderId: number;
-  weight: number;
-  timestamp: string;
-  sequenceNumber: number;
+  id: string;
+  orderId: number;
+  weight: number;
+  timestamp: string;
+  sequenceNumber: number;
 }
 
 export interface LabelTemplate {
-  id: string;
-  name: string;
+  id: string;
+  name: string;
 }
 
 // Hardware Types
@@ -54,30 +58,30 @@ export type PrinterBrand = 'Zebra' | 'Epson' | 'Brother' | 'Dymo' | 'Generic_PDF
 export type ConnectionType = 'USB_Serial' | 'System_Driver';
 
 export interface HardwareConfig {
-  scaleBrand: ScaleBrand;
-  printerBrand: PrinterBrand;
-  connectionType: ConnectionType; // New field
-  labelWidth: number; // mm (e.g. 100)
-  labelHeight: number; // mm (e.g. 150)
+  scaleBrand: ScaleBrand;
+  printerBrand: PrinterBrand;
+  connectionType: ConnectionType; // New field
+  labelWidth: number; // mm (e.g. 100)
+  labelHeight: number; // mm (e.g. 150)
 }
 
 // Auth Types
 export interface Client {
-  id: string;
-  name: string;
-  active: boolean;
+  id: string;
+  name: string;
+  active: boolean;
 }
 
 export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'operator';
-  companyId: string;
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'operator';
+  companyId: string;
 }
 
 export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
 }
